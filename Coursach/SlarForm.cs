@@ -332,6 +332,32 @@ namespace Coursach
             List<List<double>> valuesA_copy = valuesA.Select(innerList => new List<double>(innerList)).ToList();
             List<double> valuesB_copy = new List<double>(valuesB);
 
+            //перевірка, щоб не було одних 0 в першому стовпці
+            int zeros = 0;
+            for (j = 0; j < valuesB.Count; j++)
+            {
+                if (valuesA[j][0] == 0)
+                {
+                    zeros++;
+                } 
+            }
+
+            if (zeros == valuesA.Count)
+            {
+                Label message = new Label
+                {
+                    Size = new Size(360, 25),
+                    Location = new Point(300, 390),
+                    Text = "СЛАР має безліч ров'язків або не має взагалі",
+                    ForeColor = Color.Red,
+                    Tag = "warn",
+                    BackColor = Color.White
+                };
+                Controls.Add(message);
+                message.BringToFront();
+                return;
+            }
+            
             // Обрахунок
             switch (true)
             {

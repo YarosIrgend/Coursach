@@ -85,8 +85,9 @@ namespace Coursach
             }
         }
 
-        private static void Gausse(ref List<List<double>> matrix)
+        private static void Gausse(ref List<List<double>> matrix, out bool canBeTakenWithMinus)
         {
+            canBeTakenWithMinus = false;
             //якщо перший елемент першого рядка = 0, то поміняти місцями із рядком, де перший елемент != 0
             int i = 0;
             int size = matrix.Count;
@@ -98,6 +99,7 @@ namespace Coursach
                     if (matrix[i][0] != 0)
                     {
                         (matrix[i], matrix[0]) = (matrix[0], matrix[i]);
+                        canBeTakenWithMinus = true;
                         break;
                     }
 
@@ -108,6 +110,31 @@ namespace Coursach
             // прямий хід перетворення матриці
             for (int k = 0; k < size - 1; k++)
             {
+                // Перевірка, чи valuesA[k][k] дорівнює нулю, якщо так, то треба переставити рядки
+                if (matrix[k][k] == 0)
+                {
+                    int swapRow = k + 1;
+                    while (swapRow < size && matrix[swapRow][k] == 0)
+                    {
+                        swapRow++;
+                    }
+
+                    // Якщо знайдено ненульовий рядок, переставляємо рядки
+                    if (swapRow < size)
+                    {
+                        for (int j = 0; j < size; j++)
+                        {
+                            (matrix[k][j], matrix[swapRow][j]) = (matrix[swapRow][j], matrix[k][j]);
+                            canBeTakenWithMinus = (!canBeTakenWithMinus);
+                            iterationsCount++;
+                        }
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
                 for (i = k + 1; i < size; i++)
                 {
                     double factor = -matrix[i][k] / matrix[k][k];
@@ -120,9 +147,15 @@ namespace Coursach
             }
         }
 
-        private static List<List<double>> Inverse_matrix(List<List<double>> valuesA, double determinant)
+        private static List<List<double>> Inverse_matrix(List<List<double>> valuesA, double determinant,
+            out bool canBeCount)
         {
-            List<List<double>> inverse_matrix = Adjugate_matrix(valuesA);
+            List<List<double>> inverse_matrix = Adjugate_matrix(valuesA, out canBeCount);
+            if (!canBeCount)
+            {
+                return valuesA;
+            }
+
             foreach (var element in inverse_matrix)
             {
                 for (int j = 0; j < inverse_matrix.Count; j++)
@@ -132,10 +165,11 @@ namespace Coursach
                 }
             }
 
+            canBeCount = true;
             return inverse_matrix;
         }
 
-        private static List<List<double>> Adjugate_matrix(List<List<double>> valuesA)
+        private static List<List<double>> Adjugate_matrix(List<List<double>> valuesA, out bool CanBeCount)
         {
             List<List<double>> adjugate_matrix = new List<List<double>>();
 
@@ -163,11 +197,31 @@ namespace Coursach
                         minor_matrix.Add(minor_row);
                     }
 
-                    Gausse(ref minor_matrix);
-                    double minor = Determinant(minor_matrix);
-                    if ((i + j) % 2 != 0)
-                        minor *= -1;
-                    adjugate_matrix_row.Add(minor);
+                    //перевірка мінора на 0
+                    int zeros = 0;
+                    for (int index_minor = 0; index_minor < minor_matrix.Count; index_minor++)
+                    {
+                        if (minor_matrix[index_minor][0] == 0)
+                        {
+                            zeros++;
+                        }
+                    }
+
+                    if (zeros == minor_matrix.Count)
+                    {
+                        adjugate_matrix_row.Add(0);
+                    }
+                    else
+                    {
+                        bool canBeTakenWithMinus;
+                        Gausse(ref minor_matrix, out canBeTakenWithMinus);
+                        double minor = Determinant(minor_matrix);
+                        if (canBeTakenWithMinus)
+                            minor *= -1;
+                        if ((i + 1 + j + 1) % 2 != 0)
+                            minor *= -1;
+                        adjugate_matrix_row.Add(minor);
+                    }
                 }
 
                 adjugate_matrix.Add(adjugate_matrix_row);
@@ -182,6 +236,7 @@ namespace Coursach
                 }
             }
 
+            CanBeCount = true;
             return adjugate_matrix;
         }
 
@@ -336,8 +391,11 @@ namespace Coursach
 
             //перевірка на визначник
             List<List<double>> valuesA_copy = valuesA.Select(row => new List<double>(row)).ToList(); //копія матриці
-            Gausse(ref valuesA_copy);
+            bool canBeTakenWithMinus;
+            Gausse(ref valuesA_copy, out canBeTakenWithMinus);
             double det = Determinant(valuesA_copy);
+            if (canBeTakenWithMinus)
+                det *= -1;
             if (det == 0)
             {
                 Label message = new Label
@@ -355,7 +413,14 @@ namespace Coursach
                 return results;
             }
 
-            List<List<double>> inverse_matrix = Inverse_matrix(valuesA, det);
+            bool CanBeCount;
+            List<List<double>> inverse_matrix = Inverse_matrix(valuesA, det, out CanBeCount);
+            if (!CanBeCount)
+            {
+                canBeCount = false;
+                return results;
+            }
+
             //множення оберненої матриці на вектор вільних членів
             for (int i = 0; i < valuesA.Count; i++)
             {
