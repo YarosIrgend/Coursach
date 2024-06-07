@@ -14,7 +14,7 @@ namespace Coursach
         private bool canShowGraphics = true;
         private int slar_size = 2;
         private bool sizeChanged;
-        
+
         public SlarForm()
         {
             InitializeComponent();
@@ -116,6 +116,7 @@ namespace Coursach
             {
                 sizeChanged = true;
             }
+
             slar_size = 2;
             resultsReceived = false;
             canShowGraphics = true;
@@ -158,7 +159,7 @@ namespace Coursach
             Slar_create(slar_size);
         }
 
-        private void Graphics_create(List<List<double>> valuesA, List<double> valuesB)
+        private void Graphics_create(List<List<double>> valuesA, List<double> valuesB, List<double> results)
         {
             try
             {
@@ -178,10 +179,20 @@ namespace Coursach
 
                 //додавання графіку 1
                 ZedGraph.PointPairList points1 = new ZedGraph.PointPairList();
-                for (double x = -1000; x <= 1000; x += 0.01)
+                if (valuesA[0][1] != 0) // Перевірка на 0
                 {
-                    double y = (valuesB[0] - valuesA[0][0] * x) / valuesA[0][1];
-                    points1.Add(x, y);
+                    for (double x = results[0] - 1000; x <= results[0] + 1000; x += 0.1)
+                    {
+                        double y = (valuesB[0] - valuesA[0][0] * x) / valuesA[0][1];
+                        points1.Add(x, y);
+                    }
+                }
+                else
+                {
+                    for (double y = results[1] - 1000; y <= results[1] + 1000; y += 0.1)
+                    {
+                        points1.Add(valuesB[0] / valuesA[0][0], y);
+                    }
                 }
 
                 graphics.AddCurve($"{valuesA[0][0]}x + {valuesA[0][1]}y = {valuesB[0]}", points1, Color.Blue,
@@ -189,10 +200,20 @@ namespace Coursach
 
                 //додавання графіку 2
                 ZedGraph.PointPairList points2 = new ZedGraph.PointPairList();
-                for (double x = -1000; x <= 1000; x += 0.01)
+                if (valuesA[1][1] != 0) // Перевірка на 0
                 {
-                    double y = (valuesB[1] - valuesA[1][0] * x) / valuesA[1][1];
-                    points2.Add(x, y);
+                    for (double x = results[0] - 1000; x <= results[0] + 1000; x += 0.1)
+                    {
+                        double y = (valuesB[1] - valuesA[1][0] * x) / valuesA[1][1];
+                        points2.Add(x, y);
+                    }
+                }
+                else
+                {
+                    for (double y = results[1] - 1000; y <= results[1] + 1000; y += 0.1)
+                    {
+                        points2.Add(valuesB[1] / valuesA[1][0], y);
+                    }
                 }
 
                 graphics.AddCurve($"{valuesA[1][0]}x + {valuesA[1][1]}y = {valuesB[1]}", points2, Color.Red,
@@ -261,13 +282,14 @@ namespace Coursach
                         {
                             throw new OverflowException();
                         }
-                        
+
                         //перевірка на належність числа діапазону
                         double number = Convert.ToDouble(valueA.Text);
                         if (!Validations.numberInRange(number))
                         {
                             throw new OverflowException();
                         }
+
                         valuesA_row.Add(number);
                         if (j == slar_size)
                         {
@@ -280,7 +302,7 @@ namespace Coursach
                             {
                                 valuesA.Add(new List<double>(valuesA_row));
                             }
-                            
+
                             valuesA_row.Clear();
                             j = 0;
                         }
@@ -303,7 +325,8 @@ namespace Coursach
                 {
                     Size = new Size(360, 40),
                     Location = new Point(280, 390),
-                    Text = "Впишіть всі числа або поправте введення, щоб було тільки число\n      (дробові числа вводьте через кому)",
+                    Text =
+                        "Впишіть всі числа або поправте введення, щоб було тільки число\n      (дробові числа вводьте через кому)",
                     ForeColor = Color.Red,
                     Tag = "warn",
                     BackColor = Color.White
@@ -318,7 +341,8 @@ namespace Coursach
                 {
                     Size = new Size(360, 40),
                     Location = new Point(280, 390),
-                    Text = "Деякі із введенних чисел занадто малі/великі.\n(Допустимі значення від -1000000 до 1000000, 4 знаки після коми)",
+                    Text =
+                        "Деякі із введенних чисел занадто малі/великі.\n(Допустимі значення від -1000000 до 1000000, 4 знаки після коми)",
                     ForeColor = Color.Red,
                     Tag = "warn",
                     BackColor = Color.White
@@ -339,7 +363,7 @@ namespace Coursach
                 if (valuesA[j][0] == 0)
                 {
                     zeros++;
-                } 
+                }
             }
 
             if (zeros == valuesA.Count)
@@ -348,7 +372,7 @@ namespace Coursach
                 {
                     Size = new Size(360, 25),
                     Location = new Point(300, 390),
-                    Text = "СЛАР має безліч ров'язків або не має взагалі",
+                    Text = "СЛАР має безліч розв'язків або не має взагалі",
                     ForeColor = Color.Red,
                     Tag = "warn",
                     BackColor = Color.White
@@ -357,7 +381,7 @@ namespace Coursach
                 message.BringToFront();
                 return;
             }
-            
+
             // Обрахунок
             switch (true)
             {
@@ -382,7 +406,7 @@ namespace Coursach
             {
                 Label result = new Label
                 {
-                    Size = new Size(150, 22),
+                    Size = new Size(240, 22),
                     Location = new Point(10, 390 + i * 15),
                     Tag = "result",
                     Font = new Font("Segoe UI Semibold", 10),
@@ -410,7 +434,7 @@ namespace Coursach
             //вивід графіку
             if (canShowGraphics)
             {
-                Graphics_create(valuesA_copy, valuesB_copy);
+                Graphics_create(valuesA_copy, valuesB_copy, results);
             }
         }
 
@@ -431,7 +455,7 @@ namespace Coursach
                 results.Reverse();
 
                 //запис у файл
-                string fileName = "..\\..\\Результати.txt"; 
+                string fileName = "..\\..\\Результати.txt";
                 File.WriteAllLines(fileName, results);
                 Label message = new Label
                 {

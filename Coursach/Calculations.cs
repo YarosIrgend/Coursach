@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -9,16 +10,24 @@ namespace Coursach
     {
         public static int iterationsCount;
 
-        private static double Determinant(List<List<double>> valuesA)
+        private static double Determinant(List<List<double>> valuesA, out bool isInfinity)
         {
             // розраховано, що матриця зведена до східчастого вигляду
             double det = valuesA[0][0];
-            for (int i = 1; i < valuesA.Count; i++)
+            try
             {
-                det *= valuesA[i][i];
-                iterationsCount++;
+                for (int i = 1; i < valuesA.Count; i++)
+                {
+                    det *= valuesA[i][i];
+                    iterationsCount++;
+                }
             }
-
+            catch (OverflowException)
+            {
+                isInfinity = true;
+                return -1;
+            }
+            isInfinity = false;
             return det;
         }
 
@@ -51,6 +60,7 @@ namespace Coursach
                     int swapRow = k + 1;
                     while (swapRow < size && valuesA[swapRow][k] == 0)
                     {
+                        iterationsCount++;
                         swapRow++;
                     }
 
@@ -96,14 +106,13 @@ namespace Coursach
                 while (matrix[i][0] == 0)
                 {
                     i++;
+                    iterationsCount++;
                     if (matrix[i][0] != 0)
                     {
                         (matrix[i], matrix[0]) = (matrix[0], matrix[i]);
                         canBeTakenWithMinus = true;
                         break;
                     }
-
-                    iterationsCount++;
                 }
             }
 
@@ -116,6 +125,7 @@ namespace Coursach
                     int swapRow = k + 1;
                     while (swapRow < size && matrix[swapRow][k] == 0)
                     {
+                        iterationsCount++;
                         swapRow++;
                     }
 
@@ -124,9 +134,9 @@ namespace Coursach
                     {
                         for (int j = 0; j < size; j++)
                         {
+                            iterationsCount++;
                             (matrix[k][j], matrix[swapRow][j]) = (matrix[swapRow][j], matrix[k][j]);
                             canBeTakenWithMinus = (!canBeTakenWithMinus);
-                            iterationsCount++;
                         }
                     }
                     else
@@ -148,9 +158,9 @@ namespace Coursach
         }
 
         private static List<List<double>> Inverse_matrix(List<List<double>> valuesA, double determinant,
-            out bool canBeCount)
+            out bool canBeCount, Form form)
         {
-            List<List<double>> inverse_matrix = Adjugate_matrix(valuesA, out canBeCount);
+            List<List<double>> inverse_matrix = Adjugate_matrix(valuesA, out canBeCount, form);
             if (!canBeCount)
             {
                 return valuesA;
@@ -169,7 +179,7 @@ namespace Coursach
             return inverse_matrix;
         }
 
-        private static List<List<double>> Adjugate_matrix(List<List<double>> valuesA, out bool CanBeCount)
+        private static List<List<double>> Adjugate_matrix(List<List<double>> valuesA, out bool CanBeCount, Form form)
         {
             List<List<double>> adjugate_matrix = new List<List<double>>();
 
@@ -213,9 +223,24 @@ namespace Coursach
                     }
                     else
                     {
-                        bool canBeTakenWithMinus;
-                        Gausse(ref minor_matrix, out canBeTakenWithMinus);
-                        double minor = Determinant(minor_matrix);
+                        Gausse(ref minor_matrix, out var canBeTakenWithMinus);
+                        double minor = Determinant(minor_matrix, out var isInfinity);
+                        if (isInfinity)
+                        {
+                            Label message = new Label
+                            {
+                                Size = new Size(360, 25),
+                                Location = new Point(300, 390),
+                                Text = "Один із мінорів системи занадто великий/малий",
+                                ForeColor = Color.Red,
+                                Tag = "warn",
+                                BackColor = Color.White
+                            };
+                            form.Controls.Add(message);
+                            message.BringToFront();
+                            CanBeCount = false;
+                            return adjugate_matrix;
+                        }
                         if (canBeTakenWithMinus)
                             minor *= -1;
                         if ((i + 1 + j + 1) % 2 != 0)
@@ -256,10 +281,9 @@ namespace Coursach
                 for (int j = valuesA.Count - 1; j >= i; j--)
                 {
                     right -= (results[j] * valuesA[i][j]);
+                    iterationsCount++;
                 }
-
                 results[i] = right / valuesA[i][i];
-                iterationsCount++;
             }
 
             return results;
@@ -270,7 +294,7 @@ namespace Coursach
         {
             List<double> results = new List<double>();
             Gausse(ref valuesA, ref valuesB);
-            double det = Determinant(valuesA);
+            double det = Determinant(valuesA, out var isInfinity);
             if (det == 0)
             {
                 Label message = new Label
@@ -278,6 +302,23 @@ namespace Coursach
                     Size = new Size(360, 25),
                     Location = new Point(300, 390),
                     Text = "СЛАР має безліч розв'язків або не має взагалі",
+                    ForeColor = Color.Red,
+                    Tag = "warn",
+                    BackColor = Color.White
+                };
+                form.Controls.Add(message);
+                message.BringToFront();
+                canBeCount = false;
+                return results;
+            }
+
+            if (isInfinity)
+            {
+                Label message = new Label
+                {
+                    Size = new Size(360, 25),
+                    Location = new Point(300, 390),
+                    Text = "Визначник системи занадто великий/малий",
                     ForeColor = Color.Red,
                     Tag = "warn",
                     BackColor = Color.White
@@ -301,14 +342,14 @@ namespace Coursach
             int n = valuesA.Count;
 
             //обрахування визначника
-            double det = Determinant(valuesA);
+            double det = Determinant(valuesA, out var isInfinity);
             if (det == 0)
             {
                 Label message = new Label
                 {
-                    Size = new Size(360, 25),
+                    Size = new Size(360, 45),
                     Location = new Point(300, 390),
-                    Text = "СЛАР має безліч розв'язків або не має взагалі",
+                    Text = "СЛАР має безліч розв'язків або не має взагалі\nабо визначник системи занадто великий/малий",
                     ForeColor = Color.Red,
                     Tag = "warn",
                     BackColor = Color.White
@@ -318,7 +359,22 @@ namespace Coursach
                 canBeCount = false;
                 return results;
             }
-
+            if (isInfinity)
+            {
+                Label message = new Label
+                {
+                    Size = new Size(360, 25),
+                    Location = new Point(300, 390),
+                    Text = "Визначник системи занадто великий/малий",
+                    ForeColor = Color.Red,
+                    Tag = "warn",
+                    BackColor = Color.White
+                };
+                form.Controls.Add(message);
+                message.BringToFront();
+                canBeCount = false;
+                return results;
+            }
             //зворотний хід
             for (int k = n - 1; k >= 0; k--)
             {
@@ -331,6 +387,7 @@ namespace Coursach
                         while (swapRow >= 0 && valuesA[swapRow][k] == 0)
                         {
                             swapRow--;
+                            iterationsCount++;
                         }
 
                         // Якщо знайдено ненульовий рядок, переставляємо рядки
@@ -339,6 +396,7 @@ namespace Coursach
                             for (int j = 0; j < n; j++)
                             {
                                 (valuesA[k][j], valuesA[swapRow][j]) = (valuesA[swapRow][j], valuesA[k][j]);
+                                iterationsCount++;
                             }
 
                             (valuesB[k], valuesB[swapRow]) = (valuesB[swapRow], valuesB[k]);
@@ -391,9 +449,24 @@ namespace Coursach
 
             //перевірка на визначник
             List<List<double>> valuesA_copy = valuesA.Select(row => new List<double>(row)).ToList(); //копія матриці
-            bool canBeTakenWithMinus;
-            Gausse(ref valuesA_copy, out canBeTakenWithMinus);
-            double det = Determinant(valuesA_copy);
+            Gausse(ref valuesA_copy, out var canBeTakenWithMinus);
+            double det = Determinant(valuesA_copy, out var isInfinity);
+            if (isInfinity)
+            {
+                Label message = new Label
+                {
+                    Size = new Size(360, 25),
+                    Location = new Point(300, 390),
+                    Text = "Визначник системи занадто великий/малий",
+                    ForeColor = Color.Red,
+                    Tag = "warn",
+                    BackColor = Color.White
+                };
+                form.Controls.Add(message);
+                message.BringToFront();
+                canBeCount = false;
+                return results;
+            }
             if (canBeTakenWithMinus)
                 det *= -1;
             if (det == 0)
@@ -414,7 +487,7 @@ namespace Coursach
             }
 
             bool CanBeCount;
-            List<List<double>> inverse_matrix = Inverse_matrix(valuesA, det, out CanBeCount);
+            List<List<double>> inverse_matrix = Inverse_matrix(valuesA, det, out CanBeCount, form);
             if (!CanBeCount)
             {
                 canBeCount = false;

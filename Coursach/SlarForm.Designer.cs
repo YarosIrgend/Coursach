@@ -23,8 +23,8 @@
         #region Код, автоматически созданный конструктором форм Windows
 
         /// <summary>
-        /// Требуемый метод для поддержки конструктора — не изменяйте 
-        /// содержимое этого метода с помощью редактора кода.
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
         {
@@ -129,7 +129,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(148, 23);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Метод";
+            this.label1.Text = "Методи";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // panel2
@@ -201,9 +201,9 @@
             // label2
             // 
             this.label2.Font = new System.Drawing.Font("Segoe UI", 12.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label2.Location = new System.Drawing.Point(6, 0);
+            this.label2.Location = new System.Drawing.Point(1, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(146, 23);
+            this.label2.Size = new System.Drawing.Size(151, 23);
             this.label2.TabIndex = 0;
             this.label2.Text = "Розмірність";
             this.label2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -372,14 +372,13 @@
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.calculate);
             this.Controls.Add(this.panel3);
+            this.Location = new System.Drawing.Point(15, 15);
             this.Name = "SlarForm";
-            this.Text = "СЛАР калькулятор";
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
 
         #endregion
